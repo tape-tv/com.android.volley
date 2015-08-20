@@ -3,10 +3,11 @@
   <groupId>tv.tape.android-volley</groupId>
   <artifactId>library</artifactId>
   <versioning>
-    <release>1.0.0-tapetv</release>
+    <release>1.1.0-tapetv</release>
     <versions>
       <version>1.0.0-tapetv</version>
+      <version>1.1.0-tapetv</version>
     </versions>
-    <lastUpdated>20150820151900</lastUpdated>
+    <lastUpdated>20150820152015</lastUpdated>
   </versioning>
 </metadata>
