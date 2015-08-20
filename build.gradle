@@ -65,7 +65,7 @@ publish.dependsOn buildLibrary
 
 task commitNewMavenVersion(type: Exec, dependsOn: ['prepareMavenRepo', 'publish']) {
   commandLine './scripts/commit-new-maven-version.sh'
-  args = [mavenRepositoryDirectory, aarVersion]
+  args = [mavenRepositoryDirectory, aarVersion, upstreamVersion, upstreamType, upstreamRepo]
 }
 
 task pushMavenRepo(type: Exec, dependsOn: ['prepareMavenRepo']) {
