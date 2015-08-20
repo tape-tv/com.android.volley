@@ -1,0 +1,77 @@
+plugins {
+  id 'net.saliman.properties' version '1.4.3'
+}
+
+apply plugin: 'maven-publish'
+apply plugin: 'net.saliman.properties'
+
+task clean(type: Delete) {
+  delete 'build', upstreamDirectory, aarOutputDirectory, mavenRepositoryDirectory
+}
+
+task configureUpstream(type: Exec) {
+  commandLine './scripts/configure-upstream.sh'
+  args = [upstreamRepo]
+}
+
+task upstreamBranches(type: Exec, dependsOn: ['configureUpstream']) {
+  description 'List all upstream branches'
+  commandLine 'git'
+  args = ['branch', '-a']
+}
+
+task upstreamTags(type: Exec, dependsOn: ['configureUpstream']) {
+  description 'List all upstream tags'
+  commandLine 'git'
+  args = ['tag']
+}
+
+task checkoutUpstream(type: Exec, dependsOn: ['configureUpstream']) {
+  description 'Checks out a specific version of volley, overwrite version with -P upstreamVersion={version} and -P upstreamType={branch/tag}'
+  commandLine './scripts/checkout-upstream.sh'
+  args = [upstreamVersion, upstreamType, upstreamDirectory]
+}
+
+task buildLibrary(type: Exec, dependsOn: ['checkoutUpstream']) {
+  commandLine './scripts/build-library.sh'
+  args = [upstreamDirectory, aarOutputDirectory, aarOutputBasename, aarVersion, upstreamGradleVersion]
+  if(project.hasProperty('androidHome')) {
+    environment ANDROID_HOME: androidHome
+  }
+}
+
+task prepareMavenRepo(type: Exec) {
+  commandLine './scripts/prepare-maven-repo.sh'
+  args = [mavenRepositoryDirectory, mavenRepositoryBranch]
+}
+
+publishing {
+  publications {
+    repositories.maven {
+      url mavenRepositoryDirectory
+    }
+
+    maven(MavenPublication) {
+      artifacts {
+        groupId 'tv.tape.android-volley'
+        artifactId 'library'
+        version aarVersion
+        artifact (aarOutputDirectory + '/' + aarOutputBasename + aarVersion + '.aar')
+      }
+    }
+  }
+}
+publish.dependsOn buildLibrary
+
+task commitNewMavenVersion(type: Exec, dependsOn: ['prepareMavenRepo', 'publish']) {
+  commandLine './scripts/commit-new-maven-version.sh'
+  args = [mavenRepositoryDirectory, aarVersion]
+}
+
+task pushMavenRepo(type: Exec, dependsOn: ['prepareMavenRepo']) {
+  workingDir mavenRepositoryDirectory
+  commandLine 'git'
+  args = ['push', 'origin', 'HEAD:' + mavenRepositoryBranch]
+}
+
+task publishLibrary(dependsOn: ['commitNewMavenVersion', 'pushMavenRepo'])
